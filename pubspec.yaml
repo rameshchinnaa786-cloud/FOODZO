@@ -1,0 +1,46 @@
+name: FOODZO Android APK Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Extract FOODZO source
+        run: |
+          unzip -q FOODZO_Android_MVP_Source.zip -d source
+          flutter create --platforms=android --project-name foodzo --org com.foodzo app
+          cp source/pubspec.yaml app/pubspec.yaml
+          cp -R source/lib/. app/lib/
+
+      - name: Install dependencies
+        working-directory: app
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: app
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FOODZO-Android-APK
+          path: app/build/app/outputs/flutter-apk/app-release.apk
